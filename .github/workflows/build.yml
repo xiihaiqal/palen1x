@@ -35,14 +35,21 @@ jobs:
           cp work/*.iso palen1x
           cp work/iso/boot/initramfs.xz palen1x/initramfs-${{ matrix.arch }}.xz
 
-      - name: Upload artifact to cdn.nickchan.lol
-        uses: wangyucode/sftp-upload-action@v1.4.8
+      - name: Upload Artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4.3.0
         with:
-          host: ${{ secrets.NICKCHAN_FTP_HOST }}
-          port: ${{ secrets.NICKCHAN_FTP_PORT }}
-          username: palera1n
-          password: ${{ secrets.NICKCHAN_FTP_PASS }}
-          forceUpload: true
-          dryRun: false
-          localDir: 'palen1x/'
-          remoteDir: '/palera1n/artifacts/palen1x/release'
+          name: palen1x_${{ matrix.arch }}_${{ env.VERSION }}
+          path: palen1x/
+          if-no-files-found: error
+
+      - name: Create Release
+        id: create_release
+        uses: xiihaiqal/action-gh-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.VERSION }}-${{ github.run_number }}-${{ matrix.arch }}
+          name: v${{ env.VERSION }}-${{ github.run_number }}-${{ matrix.arch }}
+          files: palen1x/*.iso, palen1x/initramfs-${{ matrix.arch }}.xz
+          draft: false
